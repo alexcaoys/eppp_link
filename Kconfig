@@ -2,7 +2,7 @@ menu "eppp_link"
 
     config EPPP_LINK_USES_PPP
         bool "Use PPP network interface"
-        default "n"
+        default "y"
         select LWIP_PPP_SUPPORT
         select LWIP_PPP_SERVER_SUPPORT
         help
@@ -20,16 +20,19 @@ menu "eppp_link"
 
         config EPPP_LINK_DEVICE_UART
             bool "UART"
+            select EPPP_LINK_USES_PPP
             help
                 Use UART.
 
         config EPPP_LINK_DEVICE_SPI
             bool "SPI"
+            select EPPP_LINK_USES_PPP
             help
                 Use SPI.
 
         config EPPP_LINK_DEVICE_SDIO
             bool "SDIO"
+            select EPPP_LINK_USES_PPP
             depends on SOC_SDMMC_HOST_SUPPORTED || SOC_SDIO_SLAVE_SUPPORTED
             help
                 Use SDIO.

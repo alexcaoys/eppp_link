@@ -38,24 +38,7 @@ void eppp_netif_deinit(esp_netif_t *netif)
     }
 }
 
-#ifdef CONFIG_EPPP_LINK_USES_PPP
 #define NETSTACK_CONFIG() ESP_NETIF_NETSTACK_DEFAULT_PPP
-#else
-#define NETSTACK_CONFIG() g_eppp_netif_config_tun
-extern esp_netif_netstack_config_t *g_eppp_netif_config_tun;
-#define ESP_NETIF_INHERENT_DEFAULT_SLIP() \
-    {   \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
-        .flags = ESP_NETIF_FLAG_EVENT_IP_MODIFIED,              \
-        .get_ip_event = IP_EVENT_PPP_GOT_IP,    \
-        .lost_ip_event = IP_EVENT_PPP_LOST_IP,   \
-        .if_key = "EPPP_TUN",  \
-        .if_desc = "eppp",    \
-        .route_prio = 1,     \
-        .bridge_info = NULL \
-};
-#endif // CONFIG_EPPP_LINK_USES_PPP
 
 esp_netif_t *eppp_netif_init(eppp_type_t role, eppp_transport_handle_t h, eppp_config_t *eppp_config)
 {
@@ -65,16 +48,9 @@ esp_netif_t *eppp_netif_init(eppp_type_t role, eppp_transport_handle_t h, eppp_c
     }
 
     h->role = role;
-#ifdef CONFIG_EPPP_LINK_USES_PPP
+
     esp_netif_inherent_config_t base_netif_cfg = ESP_NETIF_INHERENT_DEFAULT_PPP();
-#else
-    esp_netif_inherent_config_t base_netif_cfg = ESP_NETIF_INHERENT_DEFAULT_SLIP();
-    esp_netif_ip_info_t slip_ip4 = {};
-    slip_ip4.ip.addr = eppp_config->ppp.our_ip4_addr.addr;
-    slip_ip4.gw.addr = eppp_config->ppp.their_ip4_addr.addr;
-    slip_ip4.netmask.addr = ESP_IP4TOADDR(255, 255, 255, 0);
-    base_netif_cfg.ip_info = &slip_ip4;
-#endif
+
     char if_key[] = "EPPP0"; // netif key needs to be unique
     if_key[sizeof(if_key) - 2 /* 2 = two chars before the terminator */ ] += s_eppp_netif_count++;
     base_netif_cfg.if_key = if_key;
@@ -91,7 +67,6 @@ esp_netif_t *eppp_netif_init(eppp_type_t role, eppp_transport_handle_t h, eppp_c
                                         .stack = NETSTACK_CONFIG(),
                                       };
 
-#ifdef CONFIG_EPPP_LINK_USES_PPP
     __attribute__((unused)) esp_err_t ret = ESP_OK;
     esp_netif_t *netif = esp_netif_new(&netif_config);
     esp_netif_ppp_config_t netif_params;
@@ -104,9 +79,6 @@ esp_netif_t *eppp_netif_init(eppp_type_t role, eppp_transport_handle_t h, eppp_c
 err:
     esp_netif_destroy(netif);
     return NULL;
-#else
-    return esp_netif_new(&netif_config);
-#endif // CONFIG_EPPP_LINK_USES_PPP
 }
 
 esp_err_t eppp_netif_stop(esp_netif_t *netif, int stop_timeout_ms)
@@ -131,17 +103,12 @@ esp_err_t eppp_netif_start(esp_netif_t *netif)
 {
     esp_netif_action_start(netif, 0, 0, 0);
     esp_netif_action_connected(netif, 0, 0, 0);
-#ifndef CONFIG_EPPP_LINK_USES_PPP
-    // PPP provides address negotiation, if not PPP, we need to check connection manually
-    return eppp_check_connection(netif);
-#else
+
     return ESP_OK;
-#endif
 }
 
 int eppp_netif_get_num(esp_netif_t *netif);
 
-#ifdef CONFIG_EPPP_LINK_USES_PPP
 static void on_ppp_event(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     esp_netif_t **netif = data;
@@ -151,7 +118,6 @@ static void on_ppp_event(void *arg, esp_event_base_t base, int32_t event_id, voi
         h->netif_stop = true;
     }
 }
-#endif // CONFIG_EPPP_LINK_USES_PPP
 
 static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
@@ -196,9 +162,7 @@ static void remove_handlers(void)
         vEventGroupDelete(s_event_group);
         s_event_group = NULL;
         esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, on_ip_event);
-#ifdef CONFIG_EPPP_LINK_USES_PPP
         esp_event_handler_unregister(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, on_ppp_event);
-#endif
     }
 }
 
@@ -272,13 +236,12 @@ esp_netif_t *eppp_open(eppp_type_t role, eppp_config_t *config, int connect_time
             remove_handlers();
             return NULL;
         }
-#ifdef CONFIG_EPPP_LINK_USES_PPP
+
         if (esp_event_handler_register(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, on_ppp_event, NULL) !=  ESP_OK) {
             ESP_LOGE(TAG, "Failed to register PPP status handler");
             remove_handlers();
             return NULL;
         }
-#endif // CONFIG_EPPP_LINK_USES_PPP
     }
     esp_netif_t *netif = eppp_init(role, config);
     if (!netif) {
