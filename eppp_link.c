@@ -14,6 +14,7 @@
 #include "eppp_link.h"
 #include "eppp_transport_spi.h"
 #include "eppp_transport_uart.h"
+#include "eppp_transport_jtag.h"
 #include "eppp_transport_sdio.h"
 #include "eppp_transport.h"
 
@@ -209,6 +210,12 @@ esp_netif_t *eppp_open(eppp_type_t role, eppp_config_t *config, int connect_time
 #if CONFIG_EPPP_LINK_DEVICE_UART
     if (config->transport != EPPP_TRANSPORT_UART) {
         ESP_LOGE(TAG, "Invalid transport: UART device must be enabled in Kconfig");
+        return NULL;
+    }
+#endif
+#if CONFIG_EPPP_LINK_DEVICE_JTAG
+    if (config->transport != EPPP_TRANSPORT_JTAG) {
+        ESP_LOGE(TAG, "Invalid transport: JTAG device must be enabled in Kconfig");
         return NULL;
     }
 #endif

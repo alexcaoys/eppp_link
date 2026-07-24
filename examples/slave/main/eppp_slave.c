@@ -140,6 +140,8 @@ void app_main(void)
     config.uart.tx_io = CONFIG_EXAMPLE_UART_TX_PIN;
     config.uart.rx_io = CONFIG_EXAMPLE_UART_RX_PIN;
     config.uart.baud = CONFIG_EXAMPLE_UART_BAUDRATE;
+#elif CONFIG_EPPP_LINK_DEVICE_JTAG
+    config.transport = EPPP_TRANSPORT_JTAG;
 #elif CONFIG_EPPP_LINK_DEVICE_SDIO
     config.transport = EPPP_TRANSPORT_SDIO;
 #endif // transport device

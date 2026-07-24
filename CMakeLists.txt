@@ -1,5 +1,5 @@
 if("${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}" VERSION_GREATER "5.3")
-    set(driver_deps esp_driver_gpio esp_driver_spi esp_driver_uart esp_driver_sdio)
+    set(driver_deps esp_driver_gpio esp_driver_spi esp_driver_uart esp_driver_usb_serial_jtag esp_driver_sdio)
 else()
     set(driver_deps driver)
 endif()
@@ -10,6 +10,10 @@ endif()
 
 if(CONFIG_EPPP_LINK_DEVICE_UART)
     set(transport_src eppp_uart.c)
+endif()
+
+if(CONFIG_EPPP_LINK_DEVICE_JTAG)
+    set(transport_src eppp_jtag.c)
 endif()
 
 if(CONFIG_EPPP_LINK_DEVICE_SDIO)

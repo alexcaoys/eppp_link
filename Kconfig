@@ -14,9 +14,15 @@ menu "eppp_link"
 
     choice EPPP_LINK_DEVICE
         prompt "Choose PPP device"
-        default EPPP_LINK_DEVICE_UART
+        default EPPP_LINK_DEVICE_JTAG
         help
             Select which peripheral to use for PPP link
+
+        config EPPP_LINK_DEVICE_JTAG
+            bool "JTAG"
+            select EPPP_LINK_USES_PPP
+            help
+                Use JTAG.
 
         config EPPP_LINK_DEVICE_UART
             bool "UART"

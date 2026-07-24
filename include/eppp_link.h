@@ -39,6 +39,12 @@ extern "C" {
             .flow_control = 0,  \
     },                          \
 
+#define EPPP_DEFAULT_JTAG_CONFIG() \
+    .jtag = {   \
+            .tx_buffer_size = 2048, \
+            .rx_buffer_size = 2048, \
+    },                          \
+
 #define EPPP_DEFAULT_SDIO_CONFIG() \
     .sdio = {                                   \
             .width = 4,                         \
@@ -59,6 +65,11 @@ extern "C" {
 #define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_UART_CONFIG()
 #define EPPP_TRANSPORT_INIT(cfg)        eppp_uart_init(&cfg->uart)
 #define EPPP_TRANSPORT_DEINIT(handle)   eppp_uart_deinit(handle)
+
+#elif CONFIG_EPPP_LINK_DEVICE_JTAG
+#define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_JTAG_CONFIG()
+#define EPPP_TRANSPORT_INIT(cfg)        eppp_jtag_init(&cfg->jtag)
+#define EPPP_TRANSPORT_DEINIT(handle)   eppp_jtag_deinit(handle)
 
 #elif CONFIG_EPPP_LINK_DEVICE_SDIO
 #define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_SDIO_CONFIG()
@@ -96,6 +107,7 @@ typedef enum eppp_type {
 
 typedef enum eppp_transport {
     EPPP_TRANSPORT_UART,
+    EPPP_TRANSPORT_JTAG,
     EPPP_TRANSPORT_SPI,
     EPPP_TRANSPORT_SDIO,
 } eppp_transport_t;
@@ -128,6 +140,11 @@ typedef struct eppp_config_t {
         int cts_io;
         int flow_control;
     } uart;
+
+    struct eppp_config_jtag_s {
+        int tx_buffer_size;
+        int rx_buffer_size;
+    } jtag;
 
     struct eppp_config_sdio_s {
         bool is_host;
