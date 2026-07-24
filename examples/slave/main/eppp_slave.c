@@ -18,7 +18,7 @@
 
 static const char *TAG = "eppp_slave";
 
-#if defined(CONFIG_SOC_WIFI_SUPPORTED) && !defined(CONFIG_EXAMPLE_WIFI_OVER_EPPP_CHANNEL)
+#if defined(CONFIG_SOC_WIFI_SUPPORTED)
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -108,17 +108,7 @@ void init_network_interface(void)
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
 }
-#else
-
-// If the SoC does not have WiFi capabilities, we can initialize a different network interface, this function is a placeholder for that purpose.
-// This function is also a no-op if EXAMPLE_WIFI_OVER_EPPP_CHANNEL==1, since the Wi-Fi network interface will live on the other peer (on the host side).
-void init_network_interface(void)
-{
-}
-
-#endif // SoC WiFi capable chip || WiFi over EPPP channel
-
-void station_over_eppp_channel(void *arg);
+#endif // SoC WiFi capable chip
 
 void app_main(void)
 {
@@ -159,9 +149,5 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to setup connection");
         return ;
     }
-#ifdef CONFIG_EXAMPLE_WIFI_OVER_EPPP_CHANNEL
-    station_over_eppp_channel(eppp_netif);
-#else
     ESP_ERROR_CHECK(esp_netif_napt_enable(eppp_netif));
-#endif // CONFIG_EXAMPLE_WIFI_OVER_EPPP_CHANNEL
 }
