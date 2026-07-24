@@ -87,7 +87,7 @@ extern "C" {
     . task = {                  \
             .run_task = true,   \
             .stack_size = 4096, \
-            .priority = 8,      \
+            .priority = 1,      \
     },  \
     . ppp = {   \
             .our_ip4_addr = { .addr = our_ip },     \

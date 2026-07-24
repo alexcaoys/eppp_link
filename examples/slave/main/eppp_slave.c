@@ -15,6 +15,8 @@
 #include "nvs_flash.h"
 #include "eppp_link.h"
 #include "inttypes.h"
+#include "lwip/sockets.h"
+#include "lwip/lwip_napt.h"
 
 static const char *TAG = "eppp_slave";
 
@@ -54,11 +56,11 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
     }
 }
 
-void init_network_interface(void)
+esp_netif_t *init_network_interface(void)
 {
     s_wifi_event_group = xEventGroupCreate();
 
-    esp_netif_create_default_wifi_sta();
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -107,6 +109,8 @@ void init_network_interface(void)
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
+
+    return sta_netif;
 }
 #endif // SoC WiFi capable chip
 
@@ -122,7 +126,7 @@ void app_main(void)
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    init_network_interface();   // WiFi station if withing SoC capabilities (otherwise a placeholder)
+    esp_netif_t *sta_netif = init_network_interface();   // WiFi station if withing SoC capabilities (otherwise a placeholder)
 
     eppp_config_t config = EPPP_DEFAULT_SERVER_CONFIG();
 #if CONFIG_EPPP_LINK_DEVICE_SPI
@@ -151,5 +155,16 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to setup connection");
         return ;
     }
+
+#ifdef CONFIG_EXAMPLE_ENABLE_NAPT
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(sta_netif, &ip_info);
+    uint32_t sta_addr = ip_info.ip.addr;
+    esp_netif_get_ip_info(eppp_netif, &ip_info);
+    uint32_t eppp_peer = ip_info.gw.addr;
+
     ESP_ERROR_CHECK(esp_netif_napt_enable(eppp_netif));
+
+    ip_portmap_add(IPPROTO_TCP, sta_addr, 22, eppp_peer, 22);
+#endif // CONFIG_EXAMPLE_ENABLE_NAPT
 }
