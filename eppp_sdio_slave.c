@@ -50,13 +50,6 @@ esp_err_t eppp_sdio_slave_tx(void *h, void *buffer, size_t len)
     return eppp_sdio_host_tx_generic(0, buffer, len);
 }
 
-#ifdef CONFIG_EPPP_LINK_CHANNELS_SUPPORT
-esp_err_t eppp_sdio_transmit_channel(esp_netif_t *netif, int channel, void *buffer, size_t len)
-{
-    return eppp_sdio_host_tx_generic(channel, buffer, len);
-}
-#endif
-
 static esp_err_t slave_reset(void)
 {
     esp_err_t ret = ESP_OK;
@@ -110,13 +103,6 @@ again:
         }
         if (head->channel == 0) {
             esp_netif_receive(netif, ptr + sizeof(struct header), head->size, NULL);
-        } else {
-#if defined(CONFIG_EPPP_LINK_CHANNELS_SUPPORT)
-            struct eppp_handle *h = esp_netif_get_io_driver(netif);
-            if (h->channel_rx) {
-                h->channel_rx(netif, head->channel, ptr + sizeof(struct header), head->size);
-            }
-#endif
         }
         if (sdio_slave_recv_load_buf(handle) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recycle packet buffer");

@@ -112,15 +112,6 @@ static esp_err_t transmit(void *h, void *buffer, size_t len)
     return transmit_generic(spi_handle, 0, buffer, len);
 }
 
-#ifdef CONFIG_EPPP_LINK_CHANNELS_SUPPORT
-static esp_err_t transmit_channel(esp_netif_t *netif, int channel, void *buffer, size_t len)
-{
-    struct eppp_handle *handle = esp_netif_get_io_driver(netif);
-    struct eppp_spi *spi_handle = __containerof(handle, struct eppp_spi, parent);;
-    return transmit_generic(spi_handle, channel, buffer, len);
-}
-#endif
-
 static void IRAM_ATTR timer_callback(void *arg)
 {
     struct eppp_spi *h = arg;
@@ -396,12 +387,6 @@ esp_err_t eppp_perform(esp_netif_t *netif)
         ESP_LOG_BUFFER_HEXDUMP(TAG, in_buf + sizeof(struct header), head->size, ESP_LOG_VERBOSE);
         if (head->channel == 0) {
             esp_netif_receive(netif, in_buf + sizeof(struct header), head->size, NULL);
-        } else {
-#if defined(CONFIG_EPPP_LINK_CHANNELS_SUPPORT)
-            if (h->parent.channel_rx) {
-                h->parent.channel_rx(netif, head->channel, in_buf + sizeof(struct header), head->size);
-            }
-#endif
         }
     }
     h->transaction_size = NEXT_TRANSACTION_SIZE(next_tx_size, head->next_size);
@@ -440,9 +425,7 @@ eppp_transport_handle_t eppp_spi_init(struct eppp_config_spi_s *config)
     ESP_RETURN_ON_FALSE(config, NULL, TAG, "Config cannot be null");
     struct eppp_spi *h = calloc(1, sizeof(struct eppp_spi));
     ESP_RETURN_ON_FALSE(h, NULL, TAG, "Failed to allocate eppp_handle");
-#ifdef CONFIG_EPPP_LINK_CHANNELS_SUPPORT
-    h->parent.channel_tx = transmit_channel;
-#endif
+
     h->is_master = config->is_master;
     h->parent.base.post_attach = post_attach;
     h->out_queue = xQueueCreate(CONFIG_EPPP_LINK_PACKET_QUEUE_SIZE, sizeof(struct packet));

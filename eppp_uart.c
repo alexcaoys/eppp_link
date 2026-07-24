@@ -51,15 +51,6 @@ static esp_err_t transmit(void *h, void *buffer, size_t len)
     return transmit_generic(uart_handle, 0, buffer, len);
 }
 
-#ifdef CONFIG_EPPP_LINK_CHANNELS_SUPPORT
-static esp_err_t transmit_channel(esp_netif_t *netif, int channel, void *buffer, size_t len)
-{
-    struct eppp_handle *handle = esp_netif_get_io_driver(netif);
-    struct eppp_uart *uart_handle = __containerof(handle, struct eppp_uart, parent);
-    return transmit_generic(uart_handle, channel, buffer, len);
-}
-#endif
-
 static esp_err_t init_uart(struct eppp_uart *h, struct eppp_config_uart_s *config)
 {
     h->uart_port = config->port;
@@ -134,9 +125,7 @@ eppp_transport_handle_t eppp_uart_init(struct eppp_config_uart_s *config)
     ESP_RETURN_ON_FALSE(config, NULL, TAG, "Config cannot be null");
     struct eppp_uart *h = calloc(1, sizeof(struct eppp_uart));
     ESP_RETURN_ON_FALSE(h, NULL, TAG, "Failed to allocate eppp_handle");
-#ifdef CONFIG_EPPP_LINK_CHANNELS_SUPPORT
-    h->parent.channel_tx = transmit_channel;
-#endif
+
     h->parent.base.post_attach = post_attach;
     ESP_GOTO_ON_ERROR(init_uart(h, config), err, TAG, "Failed to init UART");
     return &h->parent;
