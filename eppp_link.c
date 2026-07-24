@@ -12,18 +12,11 @@
 #include "esp_event.h"
 #include "esp_netif_ppp.h"
 #include "eppp_link.h"
-#include "eppp_transport_eth.h"
 #include "eppp_transport_spi.h"
 #include "eppp_transport_uart.h"
 #include "eppp_transport_sdio.h"
 #include "eppp_transport.h"
 
-
-#if CONFIG_EPPP_LINK_DEVICE_ETH
-#define EPPP_NEEDS_TASK 0
-#else
-#define EPPP_NEEDS_TASK 1
-#endif
 
 static const int GOT_IPV4 = BIT0;
 static const int CONNECTION_FAILED = BIT1;
@@ -185,7 +178,6 @@ static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void
     }
 }
 
-#if EPPP_NEEDS_TASK
 static void ppp_task(void *args)
 {
     esp_netif_t *netif = args;
@@ -194,7 +186,6 @@ static void ppp_task(void *args)
     h->exited = true;
     vTaskDelete(NULL);
 }
-#endif
 
 bool eppp_have_some_netif(void);
 
@@ -296,13 +287,12 @@ esp_netif_t *eppp_open(eppp_type_t role, eppp_config_t *config, int connect_time
     }
 
     eppp_netif_start(netif);
-#if EPPP_NEEDS_TASK
     if (xTaskCreate(ppp_task, "ppp connect", config->task.stack_size, netif, config->task.priority, NULL) != pdTRUE) {
         ESP_LOGE(TAG, "Failed to create a ppp connection task");
         eppp_deinit(netif);
         return NULL;
     }
-#endif
+
     int netif_cnt = eppp_netif_get_num(netif);
     if (netif_cnt < 0) {
         eppp_close(netif);

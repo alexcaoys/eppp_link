@@ -50,14 +50,6 @@ extern "C" {
             .d3 = 17,           \
     },                          \
 
-#define EPPP_DEFAULT_ETH_CONFIG()   \
-    .ethernet = {                   \
-        .mdc_io = 23,               \
-        .mdio_io = 18,              \
-        .phy_addr = 1,              \
-        .rst_io= 5,                 \
-    },                              \
-
 #if CONFIG_EPPP_LINK_DEVICE_SPI
 #define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_SPI_CONFIG()
 #define EPPP_TRANSPORT_INIT(cfg)        eppp_spi_init(&cfg->spi)
@@ -72,11 +64,6 @@ extern "C" {
 #define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_SDIO_CONFIG()
 #define EPPP_TRANSPORT_INIT(cfg)        eppp_sdio_init(&cfg->sdio)
 #define EPPP_TRANSPORT_DEINIT(handle)   eppp_sdio_deinit(handle)
-
-#elif CONFIG_EPPP_LINK_DEVICE_ETH
-#define EPPP_DEFAULT_TRANSPORT_CONFIG() EPPP_DEFAULT_ETH_CONFIG()
-#define EPPP_TRANSPORT_INIT(cfg)        eppp_eth_init(&cfg->ethernet)
-#define EPPP_TRANSPORT_DEINIT(handle)   eppp_eth_deinit(handle)
 
 #else
 #error Unexpeted transport
@@ -111,7 +98,6 @@ typedef enum eppp_transport {
     EPPP_TRANSPORT_UART,
     EPPP_TRANSPORT_SPI,
     EPPP_TRANSPORT_SDIO,
-    EPPP_TRANSPORT_ETHERNET,
 } eppp_transport_t;
 
 
@@ -153,13 +139,6 @@ typedef struct eppp_config_t {
         int d2;
         int d3;
     } sdio;
-
-    struct eppp_config_ethernet_s {
-        int mdc_io;
-        int mdio_io;
-        int phy_addr;
-        int rst_io;
-    } ethernet;
 
     struct eppp_config_task_s {
         bool run_task;

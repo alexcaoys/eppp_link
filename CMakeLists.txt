@@ -4,10 +4,6 @@ else()
     set(driver_deps driver)
 endif()
 
-if(CONFIG_EPPP_LINK_DEVICE_ETH)
-    set(transport_src eppp_eth.c)
-endif()
-
 if(CONFIG_EPPP_LINK_DEVICE_SPI)
     set(transport_src eppp_spi.c)
 endif()
@@ -26,8 +22,4 @@ endif()
 
 idf_component_register(SRCS eppp_link.c eppp_link_netif.cpp ${transport_src} ${netif_src}
                     INCLUDE_DIRS "include"
-                    PRIV_REQUIRES esp_netif esp_timer esp_eth ${driver_deps})
-
-if(CONFIG_EPPP_LINK_DEVICE_ETH)
-    idf_component_optional_requires(PRIVATE ethernet_init espressif__ethernet_init)
-endif()
+                    PRIV_REQUIRES esp_netif esp_timer ${driver_deps})
